@@ -10,7 +10,7 @@ import org.eclipse.swt.widgets.Group
 import org.eclipse.swt.widgets.Label
 import org.eclipse.swt.widgets.Text
 
-class PageComposite(parent: Composite, style: Int) extends Composite(parent, style) {
+class SBuildClasspathContainerPageComposite(parent: Composite, style: Int) extends Composite(parent, style) {
 
   setLayout(new GridLayout(2, false))
   setFont(parent.getFont)

@@ -76,7 +76,7 @@ class SBuildClasspathContainerPage extends WizardPage("SBuild Libraries") with I
 
   override def createControl(parent: Composite) {
 
-    val composite = new PageComposite(parent, SWT.NONE)
+    val composite = new SBuildClasspathContainerPageComposite(parent, SWT.NONE)
     composite.setLayoutData(new GridData(SWT.BEGINNING | SWT.TOP));
 
     val sbuildFile = composite.sbuildFileText
