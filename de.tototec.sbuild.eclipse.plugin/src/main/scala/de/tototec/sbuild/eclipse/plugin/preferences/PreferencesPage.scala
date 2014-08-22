@@ -16,11 +16,6 @@ class PreferencesPage()
     setDescription("SBuild configuration")
   }
 
-  override protected def createFieldEditors(): Unit = {
-    def parent() = getFieldEditorParent()
-
-    //    addField(new DirectoryFieldEditor("SBUILD_07_PATH", "SBuild Path (< 0.8)", parent()))
-    //    addField(new DirectoryFieldEditor("SBUILD_08_PATH", "SBuild Path (0.8+)", parent()))
-  }
+  override protected def createFieldEditors(): Unit = {}
 
 }

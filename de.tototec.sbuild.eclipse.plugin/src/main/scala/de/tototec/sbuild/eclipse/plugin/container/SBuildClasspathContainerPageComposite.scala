@@ -19,6 +19,10 @@ class SBuildClasspathContainerPageComposite(parent: Composite, style: Int) exten
   val sbuildFileText = new Text(this, SWT.BORDER)
   sbuildFileText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false))
 
+  new Label(this, SWT.NONE).setText("Target(s) providing the project dependencies")
+  val depsTargetsText = new Text(this, SWT.BORDER)
+  depsTargetsText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false))
+
   new Label(this, SWT.NONE).setText("Exported Classpath (default: eclipse.classpath)")
   val exportedClasspathText = new Text(this, SWT.BORDER)
   exportedClasspathText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false))

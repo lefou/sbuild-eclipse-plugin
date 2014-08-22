@@ -248,8 +248,14 @@ class SBuildClasspathContainer(path: IPath, val project: IJavaProject) extends I
     //    val sbuildHomeDir = sbuildHomePath.toFile
 
     info(s"${projectName}: Loading buildfile: ${buildfile}")
-    val resolvers = SBuildClasspathActivator.activator.sbuildResolvers.toStream.
-      map(r => r -> r.prepareProject(buildfile, /* keepFailed */ false))
+    // we use a stream to be lazy (only init a resolver when required) but keep the results
+    val resolverCandidates = SBuildClasspathActivator.activator.sbuildResolvers
+    val resolvers = resolverCandidates.toStream.zipWithIndex.map {
+      case (resolver, index) =>
+        val errorOption = resolver.prepareProject(buildfile, /* keepFailed */ false)
+        debug(s"${projectName}: Prepared resolver ${index + 1}/${resolverCandidates.size}: ${resolver} (with error: ${errorOption})")
+        resolver -> errorOption
+    }
     val resolver = resolvers.find { case (resolver, errorOption) => errorOption.isEmpty() } match {
       case Some((resolver, errorOption)) => resolver
       case None =>
@@ -277,16 +283,30 @@ class SBuildClasspathContainer(path: IPath, val project: IJavaProject) extends I
           Seq()
       }
 
-      val deps = resolver.exportedDependencies(buildfile, settings.exportedClasspath).asScala match {
-        case Right(d) => d
-        case Left(e) =>
-          debug(s"${projectName}: Could not evaluate exported classpath", e)
-          val error = s"Could not access exported dependency ${settings.exportedClasspath}. Cause: ${e.getLocalizedMessage()}"
-          return ClasspathInfo(
-            classpathEntries = Seq(),
-            relatedProjects = Set(),
-            resolveIssues = Seq(ResolveIssue.ProjectIssue(error)),
-            includedFiles = includedFiles)
+      val deps: Seq[String] = {
+        settings.depsTargets match {
+          case Seq() =>
+            debug(s"${projectName}: No dependency target given. Falling back to exported dependencies")
+            resolver.exportedDependencies(buildfile, settings.exportedClasspath).asScala match {
+              case Right(d) => d
+              case Left(e) =>
+                debug(s"${projectName}: Could not evaluate exported classpath", e)
+                val error = s"Could not access exported dependency ${settings.exportedClasspath}. Cause: ${e.getLocalizedMessage()}"
+                return ClasspathInfo(
+                  classpathEntries = Seq(),
+                  relatedProjects = Set(),
+                  resolveIssues = Seq(ResolveIssue.ProjectIssue(error)),
+                  includedFiles = includedFiles)
+            }
+          case deps =>
+            deps.flatMap { dep =>
+              val result = resolver.exportedDependenciesOfTarget(buildfile, dep).toSeq
+              debug(s"${projectName}: Target ${dep} exports: ${result}")
+              val (deps, issues) = result.partition(_.isRight())
+              issues.foreach { left => debug(s"${projectName}: ${left.left().getMessage()}", left.left()) }
+              deps.map(_.right())
+            }
+        }
       }
       debug(s"${projectName}: Exported dependencies: ${deps.mkString(",")}")
 

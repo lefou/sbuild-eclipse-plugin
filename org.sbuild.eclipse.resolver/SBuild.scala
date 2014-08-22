@@ -1,12 +1,13 @@
 import org.sbuild._
 
 @version("0.7.9010")
-@classpath("/home/lefou/work/tototec/sbuild/javac/org.sbuild.plugins.javac/target/org.sbuild.plugins.javac-0.0.9001.jar",
-  "/home/lefou/work/tototec/sbuild/sbuild-bndjar-plugin/org.sbuild.plugins.bndjar/target/org.sbuild.plugins.bndjar-0.0.9000.jar")
+@bootstrap("../Prepare.scala")
+@classpath("plugin:org.sbuild.plugins.javac-0.0.9001",
+  "plugin:org.sbuild.plugins.bndjar-0.0.9000")
 class SBuild(implicit _project: Project) {
 
   val namespace = "org.sbuild.eclipse.resolver"
-  val version = "0.3.0"
+  val version = "0.4.1"
 
   Target("phony:clean").evictCache exec {
     Path("target").deleteRecursive

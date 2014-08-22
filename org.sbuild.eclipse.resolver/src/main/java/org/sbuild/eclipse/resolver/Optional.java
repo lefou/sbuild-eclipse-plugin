@@ -54,7 +54,8 @@ public class Optional<T> implements Iterable<T> {
 
 	@SuppressWarnings("unchecked")
 	public List<T> toList() {
-		return isDefined() ? Arrays.<T> asList(optional) : Collections.<T> emptyList();
+		return isDefined() ? Arrays.<T> asList(optional) : Collections
+				.<T> emptyList();
 	}
 
 	@Override
@@ -64,7 +65,8 @@ public class Optional<T> implements Iterable<T> {
 
 	@Override
 	public String toString() {
-		return getClass().getSimpleName() + "(" + (isDefined() ? optional : "") + ")";
+		return getClass().getSimpleName() + "("
+				+ (!isDefined() ? "NONE" : optional) + ")";
 	}
 
 	@Override
@@ -72,7 +74,8 @@ public class Optional<T> implements Iterable<T> {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (isNone ? 1231 : 1237);
-		result = prime * result + ((optional == null) ? 0 : optional.hashCode());
+		result = prime * result
+				+ ((optional == null) ? 0 : optional.hashCode());
 		return result;
 	}
 

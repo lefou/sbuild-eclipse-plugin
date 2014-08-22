@@ -29,6 +29,7 @@ class SBuild(implicit _project: Project) {
     "mvn:org.eclipse.ui:workbench:3.3.0-I20070608-1100"
 
   ExportDependencies("eclipse.classpath", compileCp)
+  Target("phony:eclipse.classpath") dependsOn compileCp
 
   Target("phony:clean").evictCache exec {
     Path("target").deleteRecursive

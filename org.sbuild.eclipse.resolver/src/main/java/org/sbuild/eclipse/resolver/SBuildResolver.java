@@ -14,6 +14,12 @@ public interface SBuildResolver {
 	Either<Throwable, String[]> exportedDependencies(File projectFile,
 			String exportName);
 
+	// TargetTree exportedDependenciesOfTarget(File projectFile, String
+	// targetName);
+
+	Either<Throwable, String>[] exportedDependenciesOfTarget(File projectFile,
+			String targetName);
+
 	Either<Throwable, File[]> resolve(File projectFile, String dependency);
 
 	Optional<Throwable> prepareProject(File projectFile, boolean keepFailed);

@@ -12,6 +12,9 @@ object Settings {
   val SBuildFileKey = "sbuildFile"
   val SBuildFileDefault = "SBuild.scala"
 
+  val DepsTargetsKey = "targets"
+  val DepsTargetsDefault = ""
+
   val ExportedClasspathKey = "exportedClasspath"
   val ExportedClasspathDefault = "eclipse.classpath"
 
@@ -29,7 +32,7 @@ object Settings {
 
 class Settings() {
   import Settings._
-  
+
   def this(containerPath: IPath) = {
     this
     fromPath(containerPath)
@@ -74,6 +77,14 @@ class Settings() {
     case x if x.trim == "" => options -= SBuildFileKey
     case x if x == SBuildFileDefault => options -= SBuildFileKey
     case x => options += (SBuildFileKey -> x)
+  }
+
+  def depsTargets: Seq[String] =
+    options.getOrElse(DepsTargetsKey, DepsTargetsDefault).split("[;]").map(_.trim()).filterNot(_.isEmpty())
+  def depsTargets_=(depsTargets: Seq[String]) = depsTargets match {
+    case null => options -= DepsTargetsKey
+    case Seq() => options -= DepsTargetsKey
+    case x => options += (DepsTargetsKey -> x.mkString(";"))
   }
 
   def exportedClasspath: String =

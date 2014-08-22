@@ -13,6 +13,7 @@ import scala.util.control.NonFatal
 import org.sbuild.eclipse.resolver.SBuildResolver
 import org.sbuild.eclipse.resolver.{ Either => JEither }
 import org.sbuild.eclipse.resolver.Optional
+import org.sbuild.eclipse.resolver.sbuild08.internal.Logger._
 
 class SBuild08Resolver(sbuildHomeDir: File) extends SBuildResolver {
 
@@ -21,11 +22,10 @@ class SBuild08Resolver(sbuildHomeDir: File) extends SBuildResolver {
     sbuildExceptionClass: Class[_],
     getEmbeddedResolverMethod: Method,
     getExportedDependenciesMethod: Method,
+    getExportedDependenciesFromTargetMethod: Try[Method],
     nullProgressMonitorClass: Class[_],
     resolveMethod: Method,
     sbuildEmbedded: Any)
-
-  private[this] def debug(msg: => String): Unit = {}
 
   private[this] val state = {
     val embeddedClasspath = Classpathes.fromFile(new File(sbuildHomeDir, "lib/classpath.properties")).embeddedClasspath
@@ -49,6 +49,7 @@ class SBuild08Resolver(sbuildHomeDir: File) extends SBuildResolver {
     val getEmbeddedResolverMethod = sbuildEmbeddedClass.getMethod("loadResolver", classOf[File], classOf[Properties])
 
     val getExportedDependenciesMethod = embeddedResolverClass.getMethod("exportedDependencies", classOf[String])
+    val getExportedDependenciesFromTargetMethod = Try(embeddedResolverClass.getMethod("exportedDependenciesFromTarget", classOf[String]))
 
     val resolveMethod = embeddedResolverClass.getMethod("resolve", classOf[String], progressMonitorClass)
 
@@ -59,6 +60,7 @@ class SBuild08Resolver(sbuildHomeDir: File) extends SBuildResolver {
       sbuildExceptionClass,
       getEmbeddedResolverMethod,
       getExportedDependenciesMethod,
+      getExportedDependenciesFromTargetMethod,
       nullProgressMonitorClass,
       resolveMethod,
       sbuildEmbedded)
@@ -84,7 +86,10 @@ class SBuild08Resolver(sbuildHomeDir: File) extends SBuildResolver {
 
   def prepareProject(projectFile: File, keepFailed: Boolean): Optional[Throwable] = {
     cache.get(projectFile) match {
-      case Some(_) => Optional.none()
+      case Some(cached) => cached.resolver match {
+        case Success(_) => Optional.none()
+        case Failure(e) => Optional.some(e)
+      }
       case None =>
         val resolver = resolverForProject(projectFile)
         if (resolver.isSuccess || keepFailed)
@@ -123,9 +128,27 @@ class SBuild08Resolver(sbuildHomeDir: File) extends SBuildResolver {
           asInstanceOf[Seq[String]].toArray)
     } catch {
       case e: InvocationTargetException if sbuildExceptionClass.isInstance(e.getCause()) =>
-        //        debug(s"""Could not retrieve exported dependencies "${exportName}". Casue: ${e}""")
+        debug(s"""Could not retrieve exported dependencies "${exportName}". Casue: ${e}""")
         Left(e.getCause())
       case NonFatal(e) => Left(e)
+    }
+  }
+
+  override def exportedDependenciesOfTarget(projectFile: File, targetName: String): Array[JEither[Throwable, String]] = {
+    resolverForProject(projectFile) match {
+      case Success(resolver) =>
+        getExportedDependenciesFromTargetMethod match {
+          // If this method is not supported, we can just delegate to use the target as is
+          case Failure(e) =>
+            debug(s"Inspecting targets for exported dependencies is not supported by this version of SBuildEmbedded.", e)
+            Array(JEither.right(targetName))
+          case Success(m) =>
+            m.invoke(resolver, targetName).asInstanceOf[Seq[Either[Throwable, String]]].collect {
+              case Left(e) => JEither.left[Throwable, String](e)
+              case Right(s) => JEither.right[Throwable, String](s)
+            }.toArray
+        }
+      case Failure(e) => Array(JEither.left(e))
     }
   }
 

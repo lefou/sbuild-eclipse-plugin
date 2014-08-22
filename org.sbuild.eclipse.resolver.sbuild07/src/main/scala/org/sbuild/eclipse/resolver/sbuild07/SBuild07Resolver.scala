@@ -13,6 +13,7 @@ import scala.util.control.NonFatal
 import org.sbuild.eclipse.resolver.SBuildResolver
 import org.sbuild.eclipse.resolver.{ Either => JEither }
 import org.sbuild.eclipse.resolver.Optional
+import scala.util.Failure
 
 class SBuild07Resolver(sbuildHomeDir: File) extends SBuildResolver {
 
@@ -84,7 +85,10 @@ class SBuild07Resolver(sbuildHomeDir: File) extends SBuildResolver {
 
   def prepareProject(projectFile: File, keepFailed: Boolean): Optional[Throwable] = {
     cache.get(projectFile) match {
-      case Some(_) => Optional.none()
+      case Some(cached) => cached.resolver match {
+        case Success(_) => Optional.none()
+        case Failure(e) => Optional.some(e)
+      }
       case None =>
         val resolver = resolverForProject(projectFile)
         if (resolver.isSuccess || keepFailed)
@@ -126,6 +130,15 @@ class SBuild07Resolver(sbuildHomeDir: File) extends SBuildResolver {
         //        debug(s"""Could not retrieve exported dependencies "${exportName}". Casue: ${e}""")
         Left(e.getCause())
       case NonFatal(e) => Left(e)
+    }
+  }
+
+  override def exportedDependenciesOfTarget(projectFile: File, targetName: String): Array[JEither[Throwable, String]] = {
+    resolverForProject(projectFile) match {
+      case Success(r) =>
+        // this method is not supported, we can just delegate to use the target as is
+        Array(JEither.right(targetName))
+      case Failure(e) => Array(JEither.left(e))
     }
   }
 

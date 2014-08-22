@@ -87,6 +87,8 @@ class SBuildClasspathContainerPage extends WizardPage("SBuild Libraries") with I
     })
     sbuildFile.setText(settings.sbuildFile)
 
+    val depsTargets = composite.depsTargetsText
+
     val exportedClasspath = composite.exportedClasspathText
     exportedClasspath.addModifyListener(new ModifyListener {
       override def modifyText(e: ModifyEvent) {
@@ -94,6 +96,15 @@ class SBuildClasspathContainerPage extends WizardPage("SBuild Libraries") with I
       }
     })
     exportedClasspath.setText(settings.exportedClasspath)
+
+    depsTargets.addModifyListener(new ModifyListener {
+      override def modifyText(e: ModifyEvent): Unit = {
+        val targets = depsTargets.getText.split("\\s").map(_.trim).filterNot(_.isEmpty())
+        settings.depsTargets = targets 
+        exportedClasspath.setEnabled(targets.isEmpty)
+      }
+    })
+    depsTargets.setText(settings.depsTargets.mkString(" "))
 
     val updateDependenciesButton = composite.updateDependenciesButton
     updateDependenciesButton.setSelection(settings.relaxedFetchOfDependencies)

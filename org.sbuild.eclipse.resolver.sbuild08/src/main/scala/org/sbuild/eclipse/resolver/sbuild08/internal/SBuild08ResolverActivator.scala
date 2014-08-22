@@ -18,11 +18,16 @@ object SBuild08ResolverActivator {
 
 class SBuild08ResolverActivator extends AbstractUIPlugin with BundleActivator {
 
- private[this] var onStop: List[BundleContext => Unit] = Nil
+  private[this] var onStop: List[BundleContext => Unit] = Nil
 
   override def start(context: BundleContext): Unit = {
-    SBuild08ResolverActivator._activator = Some(this)
     super.start(context)
+
+    SBuild08ResolverActivator._activator = Some(this)
+    onStop ::= { _ => SBuild08ResolverActivator._activator = None }
+
+    //    Logger.bundleContext = Some(context)
+    //    onStop ::= { _ => Logger.bundleContext = None }
 
     var sbuildHome: String = ""
     var ref: Option[ServiceRegistration] = None
@@ -57,7 +62,6 @@ class SBuild08ResolverActivator extends AbstractUIPlugin with BundleActivator {
 
   override def stop(context: BundleContext): Unit = {
     onStop foreach { f => f(context) }
-    SBuild08ResolverActivator._activator = None
     super.stop(context)
   }
 
